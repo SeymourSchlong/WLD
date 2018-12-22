@@ -154,7 +154,7 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
         big.fillRect(40, 40, 420, 520);
         
         for (Block b : blocks) {
-            b.draw(big);
+            b.draw(big, this);
         }
         
         // Draw the new image

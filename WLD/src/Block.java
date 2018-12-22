@@ -13,6 +13,7 @@ public class Block {
     public boolean chunk = false;
     public int x, y, w, h;
     public Color color;
+    public Image img;
     
     public Block(int xx, int yy, int type) {
         x = xx;
@@ -47,9 +48,11 @@ public class Block {
         }
     }
     
-    public void draw(Graphics g /*, ImageObserver i/**/) {
+    public void draw(Graphics g, ImageObserver i) {
         g.setColor(color);
         g.fill3DRect(x, y, w, h, true);
+        
+        //img.draw(g, x, y, i);
     }
     
     public void slide() {
