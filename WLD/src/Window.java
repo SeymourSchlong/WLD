@@ -24,6 +24,8 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
     Dimension window = new Dimension(800, 600), screen = Toolkit.getDefaultToolkit().getScreenSize();
     int moves = 0, ms = 0;
     
+    Block blocks[];
+    
     Point mouse;
     Graphics big;
     BufferedImage bi;
@@ -37,7 +39,7 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
         
         setTitle("WLD"); // Sets the window title
         setSize(window); // Sets the window size
-        setLocation((screen.width/2) - (window.width/2), (screen.height/2) - (window.height/2)); // Puts the window in the center of the screen
+        setLocation((screen.width/2) - (window.width/2), (screen.height/2) - (window.height/2) - 100); // Puts the window in the center of the screen
         setIconImage(Toolkit.getDefaultToolkit().getImage("./img/icon.gif")); // Sets the toolbar and window icon
         setCursor(Toolkit.getDefaultToolkit().createCustomCursor(new ImageIcon("./img/cursor.png").getImage(), new Point(0,0), "Cursor")); // Changes the mouse cursor
         
@@ -45,7 +47,65 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
         big = bi.createGraphics();
         timer = new Timer();
         
-        
+        // Creating the blocks
+        blocks = new Block[10];
+        for (int i = 0; i < blocks.length; i++) {
+            int type = 0, xPos = 0, yPos = 0;
+            
+            switch(i) {
+                // Big
+                case 0:
+                    xPos = 150;
+                    yPos = 50;
+                    break;
+                // Tall
+                case 1:
+                    xPos = 50;
+                    yPos = 50;
+                    break;
+                case 2:
+                    xPos = 350;
+                    yPos = 50;
+                    break;
+                case 3:
+                    xPos = 50;
+                    yPos = 250;
+                    break;
+                case 4:
+                    xPos = 350;
+                    yPos = 250;
+                    break;
+                // Long
+                case 5:
+                    xPos = 150;
+                    yPos = 250;
+                    break;
+                // Small
+                case 6:
+                    xPos = 150;
+                    yPos = 350;
+                    break;
+                case 7:
+                    xPos = 250;
+                    yPos = 350;
+                    break;
+                case 8:
+                    xPos = 50;
+                    yPos = 450;
+                    break;
+                case 9:
+                    xPos = 350;
+                    yPos = 450;
+                    break;
+            }
+            
+            if (i == 0) type = 1;
+            if (i > 0 && i < 5) type = 2;
+            if (i == 5) type = 3;
+            if (i > 5 && i < 10) type = 4;
+            
+            blocks[i] = new Block(xPos, yPos, type);
+        }
         
         timer.start();
     }
@@ -90,7 +150,12 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
         // Clear the window
         big.clearRect(0, 0, window.width, window.height);
         
+        big.setColor(Color.BLACK);
+        big.fillRect(40, 40, 420, 520);
         
+        for (Block b : blocks) {
+            b.draw(big);
+        }
         
         // Draw the new image
         g.drawImage(bi, 0, 0, this);

@@ -1,3 +1,8 @@
+
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.image.ImageObserver;
+
 /**
  * A sliding block class
  * 
@@ -6,32 +11,45 @@
  */
 public class Block {
     public boolean chunk = false;
-    public int w, h;
+    public int x, y, w, h;
+    public Color color;
     
-    public Block(int type) {
+    public Block(int xx, int yy, int type) {
+        x = xx;
+        y = yy;
+        
         switch(type) {
-            // Small block
-            case 0:
-                w = 1;
-                h = 1;
+            // Big block
+            case 1:
+                w = 200;
+                h = 200;
+                chunk = true;
+                color = Color.RED;
                 break;
             // Tall block
-            case 1:
-                w = 1;
-                h = 2;
+            case 2:
+                w = 100;
+                h = 200;
+                color = Color.BLUE;
                 break;
             // Long block
-            case 2:
-                w = 2;
-                h = 1;
-                break;
-            // Big block
             case 3:
-                w = 2;
-                h = 2;
-                chunk = true;
+                w = 200;
+                h = 100;
+                color = Color.GREEN;
+                break;
+            // Small block
+            case 4:
+                w = 100;
+                h = 100;
+                color = Color.ORANGE;
                 break;
         }
+    }
+    
+    public void draw(Graphics g /*, ImageObserver i/**/) {
+        g.setColor(color);
+        g.fill3DRect(x, y, w, h, true);
     }
     
     public void slide() {
