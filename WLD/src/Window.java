@@ -1,6 +1,7 @@
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Toolkit;
@@ -24,12 +25,17 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
     Dimension window = new Dimension(800, 600), screen = Toolkit.getDefaultToolkit().getScreenSize();
     int moves = 0, ms = 0;
     
+    boolean hovering;
+    
     Block blocks[];
     
+    int CURSOR_DEFAULT = 0, CURSOR_HOVER = 1, CURSOR_GRAB = 2;
+    ImageIcon cursor, hover, grab;
     Point mouse;
     Graphics big;
     BufferedImage bi;
     Timer timer;
+    Frame frame;
     
     public Window() {
         initComponents();
@@ -37,11 +43,16 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
         addMouseListener(this);
         addMouseMotionListener(this);
         
+        
+        cursor = new ImageIcon("./img/cursor.png");
+        hover = new ImageIcon("./img/hover.png");
+        grab = new ImageIcon("./img/grab.png");
+        
         setTitle("WLD"); // Sets the window title
         setSize(window); // Sets the window size
         setLocation((screen.width/2) - (window.width/2), (screen.height/2) - (window.height/2) - 100); // Puts the window in the center of the screen
         setIconImage(Toolkit.getDefaultToolkit().getImage("./img/icon.gif")); // Sets the toolbar and window icon
-        setCursor(Toolkit.getDefaultToolkit().createCustomCursor(new ImageIcon("./img/cursor.png").getImage(), new Point(0,0), "Cursor")); // Changes the mouse cursor
+        setMouseCursor(CURSOR_DEFAULT); // Changes the mouse cursor
         
         bi = (BufferedImage) createImage(window.width, window.height);
         big = bi.createGraphics();
@@ -110,6 +121,27 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
         timer.start();
     }
     
+    public void setMouseCursor(int a) {
+        ImageIcon i;
+        
+        switch (a) {
+            case 0:
+                i = cursor;
+                break;
+            case 1:
+                i = hover;
+                break;
+            case 2:
+                i = grab;
+                break;
+            default:
+                System.out.println("Invalid cursor type.");
+                return;
+        }
+        
+        setCursor(Toolkit.getDefaultToolkit().createCustomCursor(i.getImage(), new Point(0,0), "cursor"));
+    }
+    
     public void keyTyped(KeyEvent ke) {
         int key = ke.getKeyCode();
         
@@ -120,6 +152,14 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
     
     public void mouseMoved(MouseEvent m) {
         mouse = m.getPoint();
+        
+        if (collision(mouse, blocks)) {
+            hovering = true;
+            setMouseCursor(CURSOR_HOVER);
+        } else {
+            hovering = false;
+            setMouseCursor(CURSOR_DEFAULT);
+        }
     }
     
     public void mouseClicked(MouseEvent m) {
@@ -130,21 +170,42 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
         
     }
     
+    public void mousePressed(MouseEvent m) {
+        setMouseCursor(CURSOR_GRAB);
+    }
+
+    public void mouseReleased(MouseEvent m) {
+        if (hovering) setMouseCursor(CURSOR_HOVER);
+        else setMouseCursor(CURSOR_DEFAULT);
+    }
+    
     //<editor-fold defaultstate="collapsed" desc=" Unused Listeners ">
     
     public void keyPressed(KeyEvent ke) { }
 
     public void keyReleased(KeyEvent ke) { }
 
-    public void mousePressed(MouseEvent m) { }
-
-    public void mouseReleased(MouseEvent m) { }
-
     public void mouseEntered(MouseEvent m) { }
 
     public void mouseExited(MouseEvent m) { }
     
     //</editor-fold>
+    
+    public boolean collision(Point p, Block[] bs) {
+        for (Block b : bs) {
+            if (p.x > b.x - 1) {
+                if (p.x < b.x + b.w) {
+                    if (p.y > b.y - 1) {
+                        if (p.y < b.y + b.h) {
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        
+        return false;
+    }
 
     public void paint(Graphics g) {
         // Clear the window
