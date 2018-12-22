@@ -1,6 +1,7 @@
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Point;
 import java.awt.image.ImageObserver;
 
 /**
@@ -56,8 +57,14 @@ public class Block {
         //img.draw(g, x, y, i);
     }
     
-    public void slide() {
+    public void slide(Point p) {
+        x = p.x - w/2 + 10;
+        y = p.y - h/2 + 10;
         
+        if (x < 50) x = 50;
+        if (x + w > 450) x = 450 - w;
+        if (y < 50) y = 50;
+        if (y + h > 550) y = 550 - h;
     }
     
     public boolean isKing() {

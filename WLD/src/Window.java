@@ -29,7 +29,7 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     long openTime = System.currentTimeMillis();
     String time;
     
-    boolean hovering;
+    boolean hovering, clicking;
     
     Block blocks[];
     
@@ -160,16 +160,26 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     }
     
     public void mouseDragged(MouseEvent m) {
-        
+        mouse = m.getPoint();
+        if (clicking) {
+            for (Block b : blocks) {
+                if (collision(mouse, b)) {
+                    b.slide(mouse);
+                    break;
+                }
+            }
+        }
     }
     
     public void mousePressed(MouseEvent m) {
         clickStart = m.getPoint();
+        clicking = true;
         
         setMouseCursor(CURSOR_GRAB);
     }
 
     public void mouseReleased(MouseEvent m) {
+        clicking = false;
         if (hovering) setMouseCursor(CURSOR_HOVER);
         else setMouseCursor(CURSOR_DEFAULT);
     }
@@ -184,6 +194,7 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     
     //</editor-fold>
     
+    // Checks if the mouse is hovering over ANY block.
     public boolean isHovering(Point p, Block[] bs) {
         for (Block b : bs) {
             if (p.x > b.x - 1) {
