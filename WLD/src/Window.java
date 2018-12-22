@@ -1,6 +1,7 @@
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Point;
@@ -12,6 +13,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.Date;
 import javax.swing.ImageIcon;
 
 /**
@@ -20,10 +22,12 @@ import javax.swing.ImageIcon;
  * @since 21.12.2018
  * @author tayloreyben0315, bradymills0605
  */
-public class Window extends javax.swing.JFrame implements KeyListener, MouseListener, MouseMotionListener {
+public class Window extends javax.swing.JFrame implements MouseListener, MouseMotionListener {
 
     Dimension window = new Dimension(800, 600), screen = Toolkit.getDefaultToolkit().getScreenSize();
-    int moves = 0, ms = 0;
+    int moves = 0, mls = 0, secs = 0, mins = 0, hours = 0;
+    long openTime = System.currentTimeMillis();
+    String time;
     
     boolean hovering;
     
@@ -31,7 +35,8 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
     
     int CURSOR_DEFAULT = 0, CURSOR_HOVER = 1, CURSOR_GRAB = 2;
     ImageIcon cursor, hover, grab;
-    Point mouse;
+    Font customFont, font;
+    Point mouse, clickStart;
     Graphics big;
     BufferedImage bi;
     Timer timer;
@@ -39,10 +44,8 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
     
     public Window() {
         initComponents();
-        addKeyListener(this);
         addMouseListener(this);
         addMouseMotionListener(this);
-        
         
         cursor = new ImageIcon("./img/cursor.png");
         hover = new ImageIcon("./img/hover.png");
@@ -50,6 +53,7 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
         
         setTitle("WLD"); // Sets the window title
         setSize(window); // Sets the window size
+        setResizable(false); // Makes it so you can't change the window size
         setLocation((screen.width/2) - (window.width/2), (screen.height/2) - (window.height/2) - 100); // Puts the window in the center of the screen
         setIconImage(Toolkit.getDefaultToolkit().getImage("./img/icon.gif")); // Sets the toolbar and window icon
         setMouseCursor(CURSOR_DEFAULT); // Changes the mouse cursor
@@ -110,6 +114,7 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
                     break;
             }
             
+            // Assigning the blocks their types
             if (i == 0) type = 1;
             if (i > 0 && i < 5) type = 2;
             if (i == 5) type = 3;
@@ -139,21 +144,13 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
                 return;
         }
         
-        setCursor(Toolkit.getDefaultToolkit().createCustomCursor(i.getImage(), new Point(0,0), "cursor"));
-    }
-    
-    public void keyTyped(KeyEvent ke) {
-        int key = ke.getKeyCode();
-        
-        switch(key) {
-            
-        }
+        setCursor(Toolkit.getDefaultToolkit().createCustomCursor(i.getImage(), new Point(0, 0), "cursor"));
     }
     
     public void mouseMoved(MouseEvent m) {
         mouse = m.getPoint();
         
-        if (collision(mouse, blocks)) {
+        if (isHovering(mouse, blocks)) {
             hovering = true;
             setMouseCursor(CURSOR_HOVER);
         } else {
@@ -162,15 +159,13 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
         }
     }
     
-    public void mouseClicked(MouseEvent m) {
-        
-    }
-    
     public void mouseDragged(MouseEvent m) {
         
     }
     
     public void mousePressed(MouseEvent m) {
+        clickStart = m.getPoint();
+        
         setMouseCursor(CURSOR_GRAB);
     }
 
@@ -181,9 +176,7 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
     
     //<editor-fold defaultstate="collapsed" desc=" Unused Listeners ">
     
-    public void keyPressed(KeyEvent ke) { }
-
-    public void keyReleased(KeyEvent ke) { }
+    public void mouseClicked(MouseEvent m) { }
 
     public void mouseEntered(MouseEvent m) { }
 
@@ -191,7 +184,7 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
     
     //</editor-fold>
     
-    public boolean collision(Point p, Block[] bs) {
+    public boolean isHovering(Point p, Block[] bs) {
         for (Block b : bs) {
             if (p.x > b.x - 1) {
                 if (p.x < b.x + b.w) {
@@ -206,14 +199,52 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
         
         return false;
     }
+    
+    public boolean collision(Point p, Block b) {
+        if (p.x > b.x) {
+            if (p.x < b.x + b.w) {
+                if (p.y > b.y) {
+                    if (p.y < b.y + b.h) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    public void updateTime() {
+        mls = (int) (System.currentTimeMillis() - openTime);
+        int totalSecs, totalMins, totalHours;
+        totalSecs = mls/1000;
+        secs = totalSecs % 60;
+        totalMins = totalSecs / 60;
+        mins = totalMins % 60;
+        totalHours = totalMins / 60;
+        hours = totalHours % 60;
+        
+        time = hours + ":" + (mins < 10 ? "0" + mins : mins) + ":" + (secs < 10 ? "0" + secs : secs);
+    }
 
     public void paint(Graphics g) {
         // Clear the window
         big.clearRect(0, 0, window.width, window.height);
         
-        big.setColor(Color.BLACK);
-        big.fillRect(40, 40, 420, 520);
+        font = new Font("Comic Sans MS", Font.PLAIN, 18);
+        big.setFont(font);
         
+        // Background for the bricks
+        big.setColor(new Color(0x663300));
+        big.fill3DRect(40, 40, 420, 520, true);
+        
+        big.setColor(Color.BLACK);
+        big.drawString("Time Elapsed", 600, 500);
+        big.drawString(time, 600, 550);
+        big.drawString("Total Moves", 600, 200);
+        big.drawString(String.valueOf(moves), 600, 250);
+        
+        // Draw the bricks
         for (Block b : blocks) {
             b.draw(big, this);
         }
@@ -225,10 +256,10 @@ public class Window extends javax.swing.JFrame implements KeyListener, MouseList
     public class Timer extends Thread {
         public void run() {
             while(true) {
-                
+                updateTime();
                 
                 try {
-                    Thread.sleep(0);
+                    Thread.sleep(1);
                 } catch(Exception e) {
                     System.out.println(e);
                 }

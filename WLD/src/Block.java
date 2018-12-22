@@ -49,7 +49,8 @@ public class Block {
     }
     
     public void draw(Graphics g, ImageObserver i) {
-        g.setColor(color);
+        //g.setColor(color);
+        g.setColor(new Color(0xc19a6b));
         g.fill3DRect(x, y, w, h, true);
         
         //img.draw(g, x, y, i);
