@@ -4,6 +4,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Frame;
 import java.awt.Graphics;
+import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.event.KeyEvent;
@@ -13,7 +14,6 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.util.Date;
 import javax.swing.ImageIcon;
 
 /**
@@ -36,11 +36,10 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     int CURSOR_DEFAULT = 0, CURSOR_HOVER = 1, CURSOR_GRAB = 2;
     ImageIcon cursor, hover, grab;
     Font customFont, font;
-    Point mouse, clickStart;
+    Point mouse, lastClick, frame;
     Graphics big;
     BufferedImage bi;
     Timer timer;
-    Frame frame;
     
     public Window() {
         initComponents();
@@ -61,6 +60,7 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         bi = (BufferedImage) createImage(window.width, window.height);
         big = bi.createGraphics();
         timer = new Timer();
+        mouse = new Point();
         
         // Creating the blocks
         blocks = new Block[10];
@@ -149,7 +149,6 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     
     public void mouseMoved(MouseEvent m) {
         mouse = m.getPoint();
-        
         if (isHovering(mouse, blocks)) {
             hovering = true;
             setMouseCursor(CURSOR_HOVER);
@@ -161,25 +160,19 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     
     public void mouseDragged(MouseEvent m) {
         mouse = m.getPoint();
-        if (clicking) {
-            for (Block b : blocks) {
-                if (collision(mouse, b)) {
-                    b.slide(mouse);
-                    break;
-                }
-            }
-        }
+        
     }
     
     public void mousePressed(MouseEvent m) {
-        clickStart = m.getPoint();
         clicking = true;
+        lastClick = m.getPoint();
         
         setMouseCursor(CURSOR_GRAB);
     }
 
     public void mouseReleased(MouseEvent m) {
         clicking = false;
+        
         if (hovering) setMouseCursor(CURSOR_HOVER);
         else setMouseCursor(CURSOR_DEFAULT);
     }
@@ -216,6 +209,20 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
             if (p.x < b.x + b.w) {
                 if (p.y > b.y) {
                     if (p.y < b.y + b.h) {
+                        return true;
+                    }
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    public boolean collision(Block b1, Block b2) {
+        if (b1.x > b2.x) {
+            if (b1.x < b2.x + b2.w) {
+                if (b1.y > b2.y) {
+                    if (b1.y < b2.y + b2.h) {
                         return true;
                     }
                 }

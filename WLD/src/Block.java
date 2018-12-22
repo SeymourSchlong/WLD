@@ -57,10 +57,8 @@ public class Block {
         //img.draw(g, x, y, i);
     }
     
-    public void slide(Point p) {
-        x = p.x - w/2 + 10;
-        y = p.y - h/2 + 10;
-        
+    public void slide() {
+        // Stops the block from going out of bounds
         if (x < 50) x = 50;
         if (x + w > 450) x = 450 - w;
         if (y < 50) y = 50;
