@@ -7,8 +7,6 @@ import java.awt.Graphics;
 import java.awt.MouseInfo;
 import java.awt.Point;
 import java.awt.Toolkit;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -25,7 +23,7 @@ import javax.swing.ImageIcon;
 public class Window extends javax.swing.JFrame implements MouseListener, MouseMotionListener {
 
     Dimension window = new Dimension(800, 600), screen = Toolkit.getDefaultToolkit().getScreenSize();
-    int moves = 0, mls = 0, secs = 0, mins = 0, hours = 0;
+    int moves = 0, mls = 0, secs = 0, mins = 0, hours = 0, clickedBlock;
     long openTime = System.currentTimeMillis();
     String time;
     
@@ -165,7 +163,13 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     
     public void mousePressed(MouseEvent m) {
         clicking = true;
-        lastClick = m.getPoint();
+        lastClick = m.getPoint(); // Sets the position of the click.
+        
+        for (int i = 0; i < blocks.length; i++) {
+            if (collision(mouse, blocks[i])) {
+                clickedBlock = i;
+            }
+        }
         
         setMouseCursor(CURSOR_GRAB);
     }
