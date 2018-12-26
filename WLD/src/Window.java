@@ -159,6 +159,8 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     public void mouseDragged(MouseEvent m) {
         mouse = m.getPoint();
         
+        if (isHovering(mouse, blocks)) hovering = true;
+        else hovering = false;
     }
     
     public void mousePressed(MouseEvent m) {
@@ -236,15 +238,20 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         return false;
     }
     
+    // Updates the time on the timer
     public void updateTime() {
+        // Find the difference in milliseconds since when it was opened and the current time.
         mls = (int) (System.currentTimeMillis() - openTime);
         int totalSecs, totalMins, totalHours;
-        totalSecs = mls/1000;
-        secs = totalSecs % 60;
-        totalMins = totalSecs / 60;
-        mins = totalMins % 60;
-        totalHours = totalMins / 60;
-        hours = totalHours % 60;
+                                        // Find the amount of...
+        totalSecs = mls/1000;           // seconds the program has been open
+        totalMins = totalSecs / 60;     // minutes the program has been open
+        totalHours = totalMins / 60;    // hours the program has been open
+                                        
+        // Convert into HH:MM:SS
+        secs = totalSecs % 60;          // How many seconds
+        mins = totalMins % 60;          // How many minutes
+        hours = totalHours % 60;        // How many hours
         
         time = hours + ":" + (mins < 10 ? "0" + mins : mins) + ":" + (secs < 10 ? "0" + secs : secs);
     }
@@ -267,8 +274,11 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         big.drawString(String.valueOf(moves), 600, 250);
         
         // Draw the bricks
-        for (Block b : blocks) {
-            b.draw(big, this);
+        for (int i = 0; i < blocks.length; i++) {
+            Block b = blocks[i];
+            blocks[i].draw(big, this);
+            big.setColor(Color.BLACK);
+            big.drawString(String.valueOf(i), b.x + b.w/2 - 3, b.y + b.h/2 + 6);
         }
         
         // Draw the new image
