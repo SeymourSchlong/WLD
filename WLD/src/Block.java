@@ -57,7 +57,18 @@ public class Block {
         //img.draw(g, x, y, i);
     }
     
-    public void slide() {
+    public void slide(char dir, Point m1, Point m2) {
+        int moveDistance, blockDistance;
+        if (dir == 'x') {
+            moveDistance = m1.x - m2.x;
+            
+            x += moveDistance;
+        } else {
+            moveDistance = m1.y - m2.y;
+            
+            y += moveDistance;
+        }
+        
         // Stops the block from going out of bounds
         if (x < 50) x = 50;
         if (x + w > 450) x = 450 - w;

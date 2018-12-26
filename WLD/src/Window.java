@@ -12,6 +12,7 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.util.ArrayList;
 import javax.swing.ImageIcon;
 
 /**
@@ -23,9 +24,12 @@ import javax.swing.ImageIcon;
 public class Window extends javax.swing.JFrame implements MouseListener, MouseMotionListener {
 
     Dimension window = new Dimension(800, 600), screen = Toolkit.getDefaultToolkit().getScreenSize();
-    int moves = 0, mls = 0, secs = 0, mins = 0, hours = 0, clickedBlock;
+    int moves = 0, mls = 0, secs = 0, mins = 0, hours = 0, clickedBlock, xDistance, yDistance, dragLength;
     long openTime = System.currentTimeMillis();
     String time;
+    char dir;
+    
+    ArrayList<Point> dragPos = new ArrayList();
     
     boolean hovering, clicking;
     
@@ -158,14 +162,37 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     
     public void mouseDragged(MouseEvent m) {
         mouse = m.getPoint();
+        dragLength++;
+        
+        if (clickedBlock != -1) {
+            if (dragLength == 1) {
+                xDistance = mouse.x - lastClick.x;
+                yDistance = mouse.y - lastClick.y;
+                
+                if (Math.abs(xDistance) == Math.abs(yDistance)) {
+                    dragLength--;
+                } else if (Math.abs(xDistance) > Math.abs(yDistance)) {
+                    dir = 'x';
+                } else if (Math.abs(xDistance) < Math.abs(yDistance)) {
+                    // Set the moving direction to up/down
+                    dir = 'y';
+                }
+                dragPos.add(dragLength, mouse);
+            } else {
+                dragPos.add(dragLength, mouse);
+                blocks[clickedBlock].slide(dir, mouse, dragPos.get(dragLength-1));
+            }
+        }
         
         if (isHovering(mouse, blocks)) hovering = true;
         else hovering = false;
     }
     
     public void mousePressed(MouseEvent m) {
-        clicking = true;
         lastClick = m.getPoint(); // Sets the position of the click.
+        clicking = true;
+        dragLength = 0;
+        dragPos.add(0, lastClick);
         
         for (int i = 0; i < blocks.length; i++) {
             if (collision(mouse, blocks[i])) {
@@ -179,8 +206,16 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     public void mouseReleased(MouseEvent m) {
         clicking = false;
         
+        if (clickedBlock != -1) {
+            // Snap block to nearest corner
+            
+            clickedBlock = -1;
+        }
+        
         if (hovering) setMouseCursor(CURSOR_HOVER);
         else setMouseCursor(CURSOR_DEFAULT);
+        
+        dragPos.clear();
     }
     
     //<editor-fold defaultstate="collapsed" desc=" Unused Listeners ">
@@ -225,14 +260,8 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     }
     
     public boolean collision(Block b1, Block b2) {
-        if (b1.x > b2.x) {
-            if (b1.x < b2.x + b2.w) {
-                if (b1.y > b2.y) {
-                    if (b1.y < b2.y + b2.h) {
-                        return true;
-                    }
-                }
-            }
+        if (true) {
+            return true;
         }
         
         return false;
@@ -243,7 +272,8 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         // Find the difference in milliseconds since when it was opened and the current time.
         mls = (int) (System.currentTimeMillis() - openTime);
         int totalSecs, totalMins, totalHours;
-                                        // Find the amount of...
+        
+        // Find the amount of...
         totalSecs = mls/1000;           // seconds the program has been open
         totalMins = totalSecs / 60;     // minutes the program has been open
         totalHours = totalMins / 60;    // hours the program has been open
