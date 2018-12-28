@@ -26,7 +26,7 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     Dimension window = new Dimension(800, 600), screen = Toolkit.getDefaultToolkit().getScreenSize();
     int moves = 0, mls = 0, secs = 0, mins = 0, hours = 0, clickedBlock, xDistance, yDistance, dragLength;
     long openTime = System.currentTimeMillis();
-    String time;
+    String time = "";
     char dir;
     
     ArrayList<Point> dragPos = new ArrayList();
@@ -169,6 +169,15 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
                 xDistance = mouse.x - lastClick.x;
                 yDistance = mouse.y - lastClick.y;
                 
+//                if (xDistance != 0) {
+//                    if (yDistance != 0) {
+//                        double slope = yDistance/xDistance;
+//                        
+//                        if (slope > 1) dir = 'y';
+//                        else dir = 'x';
+//                    } else dir = 'y';
+//                } else dir = 'x';
+                
                 if (Math.abs(xDistance) == Math.abs(yDistance)) {
                     dragLength--;
                 } else if (Math.abs(xDistance) > Math.abs(yDistance)) {
@@ -177,10 +186,38 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
                     // Set the moving direction to up/down
                     dir = 'y';
                 }
+                
                 dragPos.add(dragLength, mouse);
             } else {
                 dragPos.add(dragLength, mouse);
                 blocks[clickedBlock].slide(dir, mouse, dragPos.get(dragLength-1));
+                
+                for (Block b : blocks) {
+                    if (b != blocks[clickedBlock]) {
+                        int side = collision(blocks[clickedBlock], b, dir);
+                        if (side != 0) {
+                            if (dir == 'x') {
+                                // Left side
+                                if (side == 1) {
+                                    blocks[clickedBlock].x = b.x - blocks[clickedBlock].w;
+                                }
+                                // Right side
+                                if (side == 2) {
+                                    blocks[clickedBlock].x = b.x + b.w;
+                                }
+                            } else {
+                                // Top side
+                                if (side == 1) {
+                                    blocks[clickedBlock].y = b.y - blocks[clickedBlock].h;
+                                }
+                                // Bottom side
+                                if (side == 2) {
+                                    blocks[clickedBlock].y = b.y + b.h;
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
         
@@ -259,12 +296,10 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         return false;
     }
     
-    public boolean collision(Block b1, Block b2) {
-        if (true) {
-            return true;
-        }
+    public int collision(Block b1, Block b2, char dir) {
         
-        return false;
+        
+        return 0;
     }
     
     // Updates the time on the timer
