@@ -15,10 +15,15 @@ public class Block {
     public int x, y, w, h;
     public Color color;
     public Image img;
+    public int[] gridSlots;
+    public char direction;
+    public Grid grid[];
     
-    public Block(int xx, int yy, int type) {
+    public Block(int xx, int yy, int type, Grid g[]) {
         x = xx;
         y = yy;
+        
+        grid = g;
         
         switch(type) {
             // Big block
@@ -27,26 +32,48 @@ public class Block {
                 h = 200;
                 chunk = true;
                 color = Color.RED;
+                gridSlots = new int[4];
                 break;
             // Tall block
             case 2:
                 w = 100;
                 h = 200;
                 color = Color.BLUE;
+                gridSlots = new int[2];
                 break;
             // Long block
             case 3:
                 w = 200;
                 h = 100;
                 color = Color.GREEN;
+                gridSlots = new int[2];
                 break;
             // Small block
             case 4:
                 w = 100;
                 h = 100;
                 color = Color.ORANGE;
+                gridSlots = new int[1];
                 break;
         }
+        
+        h -= 2;
+        w -= 2;
+        
+        /*if(collision2() == true) {
+            for(int i = 0; i < blocks.length; i++) {
+                if()
+            }
+        }*/
+    }
+    
+    public boolean collision2() {
+        for(int i = 0; i < grid.length; i++) {
+            if (grid[i].used(this, direction)) {
+                return(true);
+            }
+
+        } return(false);
     }
     
     public void draw(Graphics g, ImageObserver i) {
@@ -58,7 +85,8 @@ public class Block {
     }
     
     public void slide(char dir, Point m1, Point m2) {
-        int moveDistance, blockDistance;
+        direction = dir;
+        int moveDistance;
         if (dir == 'x') {
             moveDistance = m1.x - m2.x;
             

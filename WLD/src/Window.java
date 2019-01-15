@@ -34,6 +34,7 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     boolean hovering, clicking;
     
     Block blocks[];
+    Grid grid[];
     
     int CURSOR_DEFAULT = 0, CURSOR_HOVER = 1, CURSOR_GRAB = 2;
     ImageIcon cursor, hover, grab;
@@ -66,6 +67,13 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         
         // Creating the blocks
         blocks = new Block[10];
+        grid = new Grid[20]; 
+        for(int i = 0; i < 5; i++) {
+            for(int j = 0; j < 4; j++) {
+                grid[i*4 + j] = new Grid(((j*100)+50), ((i*100)+50));
+                System.out.println((i*4)+j);
+            }
+        }
         for (int i = 0; i < blocks.length; i++) {
             int type = 0, xPos = 0, yPos = 0;
             
@@ -122,7 +130,7 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
             if (i == 5) type = 3;
             if (i > 5 && i < 10) type = 4;
             
-            blocks[i] = new Block(xPos, yPos, type);
+            blocks[i] = new Block(xPos + 1, yPos + 1, type, grid);
         }
         
         timer.start();
@@ -187,37 +195,55 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
                     dir = 'y';
                 }
                 
+                System.out.println(dir);
+                
                 dragPos.add(dragLength, mouse);
             } else {
                 dragPos.add(dragLength, mouse);
                 blocks[clickedBlock].slide(dir, mouse, dragPos.get(dragLength-1));
                 
-                for (Block b : blocks) {
+                /*
+                for (int i = 0; i < grid.length; i++) {
+                    for (int num : blocks[clickedBlock].gridSlots) if (num == i) return;
+                    
+                    
+                    
+                    if (true) {
+                        
+                    }
+                }//*/
+                
+                for (int i = 0; i < blocks.length; i++) {
+                    Block b = blocks[i];
+                    
                     if (b != blocks[clickedBlock]) {
                         int side = collision(blocks[clickedBlock], b, dir);
+                        
                         if (side != 0) {
+                            System.out.println("Block #" + i + " collided with (clickedBlock) #" + clickedBlock + " on side " + side + dir);
+                            
                             if (dir == 'x') {
                                 // Left side
                                 if (side == 1) {
-                                    blocks[clickedBlock].x = b.x - blocks[clickedBlock].w;
+                                    blocks[clickedBlock].x = b.x - blocks[clickedBlock].w - 2;
                                 }
                                 // Right side
-                                if (side == 2) {
-                                    blocks[clickedBlock].x = b.x + b.w;
+                                else if (side == 2) {
+                                    blocks[clickedBlock].x = b.x + blocks[clickedBlock].w - 2;
                                 }
                             } else {
                                 // Top side
                                 if (side == 1) {
-                                    blocks[clickedBlock].y = b.y - blocks[clickedBlock].h;
+                                    blocks[clickedBlock].y = b.y - blocks[clickedBlock].h - 2;
                                 }
                                 // Bottom side
-                                if (side == 2) {
-                                    blocks[clickedBlock].y = b.y + b.h;
+                                else if (side == 2) {
+                                    blocks[clickedBlock].y = b.y + blocks[clickedBlock].h - 2;
                                 }
                             }
                         }
                     }
-                }
+                }//*/
             }
         }
         
@@ -297,7 +323,36 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     }
     
     public int collision(Block b1, Block b2, char dir) {
-        
+        // Left/Right
+        if (dir == 'x') {
+            if (b1.y >= b2.y - 1) {
+                if (b1.y <= b2.y + b2.h + 1) {
+                    // Left
+                    if (b1.x >= b2.x) {
+                        return 1;
+                    }
+                    // Right
+                    if (b1.x <= b2.x + b2.w) {
+                        return 2;
+                    }
+                }
+            }
+        }
+        // Top/Bottom
+        else if (dir == 'y') {
+            if (b1.x >= b2.x) {
+                if (b1.x <= b2.x + b2.w) {
+                    // Top
+                    if (b1.y >= b2.y) {
+                        return 1;
+                    }
+                    // Bottom
+                    if (b1.y <= b2.y + b2.h) {
+                        return 2;
+                    }
+                }
+            }
+        }
         
         return 0;
     }
@@ -345,7 +400,9 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
             big.setColor(Color.BLACK);
             big.drawString(String.valueOf(i), b.x + b.w/2 - 3, b.y + b.h/2 + 6);
         }
-        
+        for(int i = 0; i < 20; i++) {
+            //grid[i].draw(big, i);
+        }
         // Draw the new image
         g.drawImage(bi, 0, 0, this);
     }
