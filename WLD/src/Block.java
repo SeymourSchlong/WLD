@@ -12,16 +12,26 @@ import java.awt.image.ImageObserver;
  */
 public class Block {
     public boolean chunk = false;
+    public int xPrev, yPrev;
     public int type;
-    public int x, y, w, h;
-    public Color color;
+    public int x, y, w, h, xStart, yStart;
     public Image img;
     public char direction;
     
-    public Block(int xx, int yy, int blockType) {
+    public Block(int xx, int yy, int blockType, String loc) {
         x = xx;
         y = yy;
+        xStart = xx;
+        yStart = yy;
         
+        type = blockType;
+        
+        //img = new Image(x, y, "loc");
+        
+        setType(type);
+    }
+    
+    public void setType(int blockType) {
         type = blockType;
         
         switch(type) {
@@ -30,25 +40,21 @@ public class Block {
                 w = 200;
                 h = 200;
                 chunk = true;
-                color = Color.RED;
                 break;
             // Tall block
             case 2:
                 w = 100;
                 h = 200;
-                color = Color.BLUE;
                 break;
             // Long block
             case 3:
                 w = 200;
                 h = 100;
-                color = Color.GREEN;
                 break;
             // Small block
             case 4:
                 w = 100;
                 h = 100;
-                color = Color.ORANGE;
                 break;
         }
         
@@ -57,11 +63,20 @@ public class Block {
     }
     
     public void draw(Graphics g, ImageObserver i) {
-        //g.setColor(color);
         g.setColor(new Color(0xc19a6b));
         g.fill3DRect(x, y, w, h, true);
         
         //img.draw(g, x, y, i);
+    }
+    
+    public void resetPos() {
+        x = xStart;
+        y = yStart;
+    }
+    
+    public void setPrev() {
+        xPrev = x;
+        yPrev = y;
     }
     
     public void slide(char dir, Point m1, Point m2) {

@@ -39,6 +39,7 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     ImageIcon cursor, hover, grab;
     Font customFont, font;
     Point mouse, lastClick, frame;
+    Button reset;
     Graphics big;
     BufferedImage bi;
     Timer timer;
@@ -51,6 +52,8 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         cursor = new ImageIcon("./img/cursor.png");
         hover = new ImageIcon("./img/hover.png");
         grab = new ImageIcon("./img/grab.png");
+        
+        reset = new Button(600, 69, 80, 25);
         
         setTitle("WLD"); // Sets the window title
         setSize(window); // Sets the window size
@@ -129,10 +132,16 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
             if (i == 5) type = 3;
             if (i > 5 && i < 10) type = 4;
             
-            blocks[i] = new Block(xPos + 1, yPos + 1, type);
+            blocks[i] = new Block(xPos + 1, yPos + 1, type, "block_"+i+".png");
         }
         
         timer.start();
+    }
+    
+    public void reset() {
+        openTime = System.currentTimeMillis();
+        moves = 0;
+        for (Block b : blocks) b.resetPos();
     }
     
     public void setMouseCursor(int a) {
@@ -156,6 +165,27 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         setCursor(Toolkit.getDefaultToolkit().createCustomCursor(i.getImage(), new Point(0, 0), "cursor"));
     }
     
+    public void snapBlock(Block b) {
+            for (int i = 0; i < xPositions.length - 1; i++) {
+                // Check if the "center" of the block is in between
+                if (xPositions[i] <= b.x + 50 && b.x + 50 <= xPositions[i + 1]) {
+                    b.x = xPositions[i] + 1;
+                    break;
+                }
+            }
+            for (int i = 0; i < yPositions.length - 1; i++) {
+                if (yPositions[i] <= b.y + 50 && b.y + 50 <= yPositions[i + 1]) {
+                    b.y = yPositions[i] + 1;
+                    break;
+                }
+            }
+            
+            // If the block's "new" location is the same as when 
+            if (b.x != b.xPrev || b.y != b.yPrev) moves++;
+            
+            clickedBlock = -1;
+    }
+    
     public void mouseMoved(MouseEvent m) {
         mouse = m.getPoint();
         if (isHovering(mouse, blocks)) {
@@ -165,25 +195,6 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
             hovering = false;
             setMouseCursor(CURSOR_DEFAULT);
         }
-    }
-    
-    public void snapBlock(Block b) {
-            for (int i = 0; i < xPositions.length - 1; i++) {
-                // Check if the "center" of the block is in between
-                if (xPositions[i] <= blocks[clickedBlock].x + 50 && blocks[clickedBlock].x + 50 <= xPositions[i + 1]) {
-                    blocks[clickedBlock].x = xPositions[i] + 1;
-                    break;
-                }
-            }
-            for (int i = 0; i < yPositions.length - 1; i++) {
-                if (yPositions[i] <= blocks[clickedBlock].y + 50 && blocks[clickedBlock].y + 50 <= yPositions[i + 1]) {
-                    blocks[clickedBlock].y = yPositions[i] + 1;
-                    break;
-                }
-            }
-            moves++;
-            
-            clickedBlock = -1;
     }
     
     public void mouseDragged(MouseEvent m) {
@@ -220,22 +231,13 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
                 dragPos.add(dragLength, mouse);
                 blocks[clickedBlock].slide(dir, mouse, dragPos.get(dragLength-1));
                 
-                /*
-                for (int i = 0; i < grid.length; i++) {
-                    for (int num : blocks[clickedBlock].gridSlots) if (num == i) return;
-                    
-                    
-                    
-                    if (true) {
-                        
-                    }
-                }//*/
                 
                 for (int i = 0; i < blocks.length; i++) {
                     Block b = blocks[i];
                     
                     if (b != blocks[clickedBlock]) {
                         int side = collision(blocks[clickedBlock], b, dir);
+                        //side = 0; // Disables collision if uncommented
                         
                         if (side != 0) {
                             System.out.println("Clicked block #" + clickedBlock + " has collided with block #" + i + " on side " + side);
@@ -264,7 +266,7 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
                             }//*/
                         }
                     }
-                }//*/
+                }
             }
         }
         
@@ -281,6 +283,14 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         for (int i = 0; i < blocks.length; i++) {
             if (collision(mouse, blocks[i])) {
                 clickedBlock = i;
+                
+                blocks[i].setPrev();
+            }
+        }
+        
+        if (m.getX() > reset.x && m.getX() < reset.x + reset.w) {
+            if (m.getY() > reset.y && m.getY() < reset.y + reset.h) {
+                reset.hover = true;
             }
         }
         
@@ -297,6 +307,14 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         
         if (hovering) setMouseCursor(CURSOR_HOVER);
         else setMouseCursor(CURSOR_DEFAULT);
+        
+        if (m.getX() > reset.x && m.getX() < reset.x + reset.w) {
+            if (m.getY() > reset.y && m.getY() < reset.y + reset.h) {
+                reset();
+            }
+        }
+        
+        reset.hover = false;
         
         dragPos.clear();
     }
@@ -328,6 +346,7 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         return false;
     }
     
+    // If the mouse is clicking a block
     public boolean collision(Point p, Block b) {
         if (p.x > b.x) {
             if (p.x < b.x + b.w) {
@@ -342,48 +361,43 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         return false;
     }
     
+    // If two blocks hit each other
     public int collision(Block b1, Block b2, char dir) {
-        
-        /*// Hits top/bottom
-        if (dir == 'x') {
-            // This should be true if it's on the same row.
-            if (b1.y <= b2.y) {
-                System.out.println("Same row as another block...");
-                return 1;
-            }
-        }
-        // Hits left/right
-        else if (dir == 'y') {
-            
-        }//*/
-        
-        // Old collision code... Maybe it could work?
         // Left/Right
         if (dir == 'x') {
-            if (b1.y <= b2.y) {
+            if (b1.y >= b2.y || (b1.type == 1 || b1.type == 2) && b1.y + 100 >= b2.y) {
                 if (b1.y <= b2.y + b2.h) {
                     // Left
-                    if (b1.x + b1.w >= b2.x && b1.x + b1.w <= b2.x + b2.w) {
-                        return 1;
+                    if (b1.x + b1.w >= b2.x) {
+                        if (b1.x + b1.w < b2.x + b2.w) {
+                            return 1;
+                        }
                     }
                     // Right
-                    if (b1.x <= b2.x + b2.w && b1.x > b2.x) {
-                        return 2;
+                    if (b1.x <= b2.x + b2.w) {
+                        if (b1.x > b2.x) {
+                            return 2;
+                        }
                     }
                 }
             }
-        }
+        }//*/
+        
         // Top/Bottom
-        else if (dir == 'y') {
-            if (b1.x <= b2.x) {
+        if (dir == 'y') {
+            if (b1.x >= b2.x || (b1.type == 1 || b1.type == 3) && b1.x + 100 >= b2.x) {
                 if (b1.x <= b2.x + b2.w) {
                     // Top
-                    if (b1.y + b1.h >= b2.y && b1.y + b1.h <= b2.y + b2.h) {
-                        return 1;
+                    if (b1.y + b1.h >= b2.y) {
+                        if (b1.y + b1.h < b2.y + b2.h) {
+                            return 1;
+                        }
                     }
                     // Bottom
-                    if (b1.y <= b2.y + b2.h && b1.y > b2.y) {
-                        return 2;
+                    if (b1.y <= b2.y + b2.h) {
+                        if (b1.y > b2.y) {
+                            return 2;
+                        }
                     }
                 }
             }
@@ -435,9 +449,9 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
             big.setColor(Color.BLACK);
             big.drawString(String.valueOf(i), b.x + b.w/2 - 3, b.y + b.h/2 + 6);
         }
-        /*for(int i = 0; i < 20; i++) {
-            grid[i].draw(big, i);
-        }//*/
+        
+        reset.draw(big, font);
+        
         // Draw the new image
         g.drawImage(bi, 0, 0, this);
     }
