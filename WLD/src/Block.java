@@ -12,6 +12,7 @@ import java.awt.image.ImageObserver;
  */
 public class Block {
     public boolean chunk = false;
+    public int type;
     public int x, y, w, h;
     public Color color;
     public Image img;
@@ -19,11 +20,13 @@ public class Block {
     public char direction;
     public Grid grid[];
     
-    public Block(int xx, int yy, int type, Grid g[]) {
+    public Block(int xx, int yy, int blockType, Grid g[]) {
         x = xx;
         y = yy;
         
         grid = g;
+        
+        type = blockType;
         
         switch(type) {
             // Big block
