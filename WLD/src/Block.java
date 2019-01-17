@@ -13,22 +13,35 @@ import java.awt.image.ImageObserver;
 public class Block {
     public boolean chunk = false;
     public int xPrev, yPrev;
+    public int id = -1;
     public int type;
     public int x, y, w, h, xStart, yStart;
+    public boolean imgVisible = false;
     public Image img;
     public char direction;
     
-    public Block(int xx, int yy, int blockType, String loc) {
+    public Block(int xx, int yy, int blockType, String loc, int num) {
+        id = num;
+        
         x = xx;
         y = yy;
         xStart = xx;
         yStart = yy;
+        setPrev();
         
         type = blockType;
         
-        //img = new Image(x, y, "loc");
-        
         setType(type);
+        
+        if (!".png".equals(loc)) {
+            img = new Image(x, y, loc);
+            imgVisible = true;
+        }
+    }
+    
+    public void setPos(int xx, int yy) {
+        x = xx + 1;
+        y = yy + 1;
     }
     
     public void setType(int blockType) {
@@ -66,7 +79,7 @@ public class Block {
         g.setColor(new Color(0xc19a6b));
         g.fill3DRect(x, y, w, h, true);
         
-        //img.draw(g, x, y, i);
+        if (imgVisible) img.draw(g, x, y, i);
     }
     
     public void resetPos() {

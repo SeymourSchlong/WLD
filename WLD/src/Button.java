@@ -34,4 +34,10 @@ public class Button {
         g.setFont(f);
         g.drawString("RESET", x + 5, y + h/2 + 5);
     }
+    
+    public void draw(Graphics g) {
+        if (!hover) g.setColor(new Color(0xc19a6b));
+        else g.setColor(new Color(0x7e5d35));
+        g.fill3DRect(x, y, w, h, true);
+    }
 }

@@ -2,6 +2,7 @@
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Toolkit;
@@ -39,7 +40,7 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     ImageIcon cursor, hover, grab;
     Font customFont, font;
     Point mouse, lastClick, frame;
-    Button reset;
+    Button reset, gotem;
     Graphics big;
     BufferedImage bi;
     Timer timer;
@@ -54,6 +55,7 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         grab = new ImageIcon("./img/grab.png");
         
         reset = new Button(600, 69, 80, 25);
+        gotem = new Button(window.width - 6, window.height - 6, 5, 5);
         
         setTitle("WLD"); // Sets the window title
         setSize(window); // Sets the window size
@@ -78,51 +80,62 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         }
         for (int i = 0; i < blocks.length; i++) {
             int type = 0, xPos = 0, yPos = 0;
+            String imgLoc = "";
             
             switch(i) {
                 // Big
                 case 0:
                     xPos = 150;
                     yPos = 50;
+                    imgLoc = "the one true king";
                     break;
                 // Tall
                 case 1:
                     xPos = 50;
                     yPos = 50;
+                    imgLoc = "MY LEG!!";
                     break;
                 case 2:
                     xPos = 350;
                     yPos = 50;
+                    imgLoc = "gerron";
                     break;
                 case 3:
                     xPos = 50;
                     yPos = 250;
+                    imgLoc = "succ and cuck master";
                     break;
                 case 4:
                     xPos = 350;
                     yPos = 250;
+                    imgLoc = "karate joe for smash";
                     break;
                 // Long
                 case 5:
                     xPos = 150;
                     yPos = 250;
+                    imgLoc = "caring and supportive funky kong gives you a ride home from the airport";
                     break;
                 // Small
                 case 6:
                     xPos = 150;
                     yPos = 350;
+                    imgLoc = "sal";
                     break;
                 case 7:
                     xPos = 250;
                     yPos = 350;
+                    imgLoc = "wtf";
                     break;
                 case 8:
                     xPos = 50;
                     yPos = 450;
+                    imgLoc = "you may touch it once";
                     break;
                 case 9:
                     xPos = 350;
                     yPos = 450;
+                    imgLoc = "thottus begonus";
                     break;
             }
             
@@ -132,7 +145,7 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
             if (i == 5) type = 3;
             if (i > 5 && i < 10) type = 4;
             
-            blocks[i] = new Block(xPos + 1, yPos + 1, type, "block_"+i+".png");
+            blocks[i] = new Block(xPos + 1, yPos + 1, type, imgLoc + ".png", i);
         }
         
         timer.start();
@@ -141,7 +154,28 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     public void reset() {
         openTime = System.currentTimeMillis();
         moves = 0;
-        for (Block b : blocks) b.resetPos();
+        for (Block b : blocks) {
+            b.resetPos();
+            b.imgVisible = true;
+        }
+    }
+    public void getem() {
+        System.out.println("gotcha");
+        for (Block b : blocks) b.imgVisible = false;
+        // Big block
+        blocks[0].setPos(250, 50);
+        // Tall blocks
+        blocks[1].setPos(250, 150);
+        blocks[2].setPos(250, 250);
+        blocks[3].setPos(350, 150);
+        blocks[4].setPos(350, 250);
+        // Long block
+        blocks[5].setPos(150, 350);
+        // Small block
+        blocks[6].setPos(50, 250);
+        blocks[7].setPos(150, 150);
+        blocks[8].setPos(250, 450);
+        blocks[9].setPos(350, 450);
     }
     
     public void setMouseCursor(int a) {
@@ -161,7 +195,6 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
                 System.out.println("Invalid cursor type.");
                 return;
         }
-        
         setCursor(Toolkit.getDefaultToolkit().createCustomCursor(i.getImage(), new Point(0, 0), "cursor"));
     }
     
@@ -180,8 +213,22 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
                 }
             }
             
+            for (int i = 0; i < blocks.length; i++) {
+                if (i != clickedBlock) {
+                    if ((b.x >= blocks[i].xPrev && b.x <= blocks[i].x + blocks[i].w) && (b.y >= blocks[i].yPrev && b.y <= blocks[i].y + blocks[i].h)) {
+                        System.out.println("There's already a block there!");
+                        b.x = b.xPrev;
+                        b.y = b.yPrev;
+                        break;
+                    }
+                }
+            }
+            
             // If the block's "new" location is the same as when 
-            if (b.x != b.xPrev || b.y != b.yPrev) moves++;
+            if (b.x != b.xPrev || b.y != b.yPrev) {
+                moves++;
+                b.setPrev();
+            }
             
             clickedBlock = -1;
     }
@@ -224,8 +271,6 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
                     dir = 'y';
                 }
                 
-                System.out.println(dir);
-                
                 dragPos.add(dragLength, mouse);
             } else {
                 dragPos.add(dragLength, mouse);
@@ -240,30 +285,8 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
                         //side = 0; // Disables collision if uncommented
                         
                         if (side != 0) {
-                            System.out.println("Clicked block #" + clickedBlock + " has collided with block #" + i + " on side " + side);
-                            
                             snapBlock(blocks[clickedBlock]);
-                            return;
-                            /*
-                            if (dir == 'x') {
-                                // Left side
-                                if (side == 1) {
-                                    blocks[clickedBlock].x = b.x - blocks[clickedBlock].w - 2;
-                                }
-                                // Right side
-                                else if (side == 2) {
-                                    blocks[clickedBlock].x = b.x + blocks[clickedBlock].w - 2;
-                                }
-                            } else {
-                                // Top side
-                                if (side == 1) {
-                                    blocks[clickedBlock].y = b.y - blocks[clickedBlock].h - 2;
-                                }
-                                // Bottom side
-                                else if (side == 2) {
-                                    blocks[clickedBlock].y = b.y + blocks[clickedBlock].h - 2;
-                                }
-                            }//*/
+                            break;
                         }
                     }
                 }
@@ -294,6 +317,9 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
             }
         }
         
+        if (buttonPress(mouse, reset)) reset.hover = true;
+        if (buttonPress(mouse, gotem)) gotem.hover = true;
+        
         setMouseCursor(CURSOR_GRAB);
     }
 
@@ -308,13 +334,11 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         if (hovering) setMouseCursor(CURSOR_HOVER);
         else setMouseCursor(CURSOR_DEFAULT);
         
-        if (m.getX() > reset.x && m.getX() < reset.x + reset.w) {
-            if (m.getY() > reset.y && m.getY() < reset.y + reset.h) {
-                reset();
-            }
-        }
+        if (buttonPress(mouse, reset)) reset();
+        if (buttonPress(mouse, gotem)) getem();
         
         reset.hover = false;
+        gotem.hover = false;
         
         dragPos.clear();
     }
@@ -328,6 +352,17 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     public void mouseExited(MouseEvent m) { }
     
     //</editor-fold>
+    
+    // Checks if the mouse clicks a button
+    public boolean buttonPress(Point p, Button b) {
+        if (p.getX() > b.x && p.getX() < b.x + b.w) {
+            if (p.getY() > b.y && p.getY() < b.y + b.h) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
     
     // Checks if the mouse is hovering over ANY block.
     public boolean isHovering(Point p, Block[] bs) {
@@ -447,10 +482,11 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
             Block b = blocks[i];
             blocks[i].draw(big, this);
             big.setColor(Color.BLACK);
-            big.drawString(String.valueOf(i), b.x + b.w/2 - 3, b.y + b.h/2 + 6);
+            //big.drawString(String.valueOf(i), b.x + b.w/2 - 3, b.y + b.h/2 + 6);
         }
         
         reset.draw(big, font);
+        gotem.draw(big);
         
         // Draw the new image
         g.drawImage(bi, 0, 0, this);
