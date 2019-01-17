@@ -161,8 +161,12 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         String fileContent = "";
         
         for (Block b : blocks) {
+            // x,y;
             fileContent += (b.x - 1) + "," + (b.y - 1) + ";";
         }
+        // Adds the amount of moves and time taken at the end.
+        fileContent += moves + ";";
+        fileContent += (System.currentTimeMillis() - openTime);
      
         try {
             FileWriter fileWriter = new FileWriter("./save.wld");
@@ -176,11 +180,13 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     }
     
     public void load() {
+        // Current character being read
         String line = null;
+        // The content of the .wld file
         String fileContent = "";
         
-        File file = new File("./save.wld");
-        if (!file.exists()) return;
+        // if there is no save found, stop
+        if (!new File("./save.wld").exists()) return;
         
         try {
             FileReader fileReader = new FileReader("./save.wld");
@@ -198,10 +204,15 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         System.out.println("Successfully loaded progress!");
         String[] blockProgress = fileContent.split(";");
         
-        for (int i = 0; i < blockProgress.length; i++) {
+        // Put the blocks in the saved spot
+        for (int i = 0; i < blocks.length; i++) {
             String blockPos[] = blockProgress[i].split(",");
             blocks[i].setPos(Integer.parseInt(blockPos[0]), Integer.parseInt(blockPos[1]));
         }
+        // Sets the move counter to the amount given in the save
+        moves = Integer.parseInt(blockProgress[10]);
+        // Sets the timer to the current time minus the amount of milliseconds in the save
+        openTime = System.currentTimeMillis() - Integer.parseInt(blockProgress[11]);
     }
     
     public void reset() {
