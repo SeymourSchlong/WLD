@@ -10,6 +10,10 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
 import java.util.ArrayList;
 import javax.swing.ImageIcon;
 
@@ -40,7 +44,7 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     ImageIcon cursor, hover, grab;
     Font customFont, font;
     Point mouse, lastClick, frame;
-    Button reset, gotem;
+    Button reset, gotem, save, load;
     Graphics big;
     BufferedImage bi;
     Timer timer;
@@ -54,8 +58,10 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         hover = new ImageIcon("./img/hover.png");
         grab = new ImageIcon("./img/grab.png");
         
-        reset = new Button(600, 69, 80, 25);
-        gotem = new Button(window.width - 6, window.height - 6, 5, 5);
+        reset = new Button(600, 75, 80, 25, "RESET");
+        gotem = new Button(window.width - 6, window.height - 6, 5, 5, "");
+        save = new Button(600, 110, 80, 25, "SAVE");
+        load = new Button(600, 145, 80, 25, "LOAD");
         
         setTitle("WLD"); // Sets the window title
         setSize(window); // Sets the window size
@@ -149,6 +155,53 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         }
         
         timer.start();
+    }
+    
+    public void save() {
+        String fileContent = "";
+        
+        for (Block b : blocks) {
+            fileContent += (b.x - 1) + "," + (b.y - 1) + ";";
+        }
+     
+        try {
+            FileWriter fileWriter = new FileWriter("./save.wld");
+            fileWriter.write(fileContent);
+            fileWriter.close();
+        } catch(Exception e) {
+            System.out.println("Error when saving... " + e);
+            return;
+        }
+        System.out.println("Successfully saved progress!");
+    }
+    
+    public void load() {
+        String line = null;
+        String fileContent = "";
+        
+        File file = new File("./save.wld");
+        if (!file.exists()) return;
+        
+        try {
+            FileReader fileReader = new FileReader("./save.wld");
+            
+            BufferedReader bufferedReader = new BufferedReader(fileReader);
+            while((line = bufferedReader.readLine()) != null) {
+                fileContent += line;
+            }
+
+            bufferedReader.close(); 
+        } catch(Exception e) {
+            System.out.println("Error when loading... " + e);
+            return;
+        }
+        System.out.println("Successfully loaded progress!");
+        String[] blockProgress = fileContent.split(";");
+        
+        for (int i = 0; i < blockProgress.length; i++) {
+            String blockPos[] = blockProgress[i].split(",");
+            blocks[i].setPos(Integer.parseInt(blockPos[0]), Integer.parseInt(blockPos[1]));
+        }
     }
     
     public void reset() {
@@ -311,14 +364,10 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
             }
         }
         
-        if (m.getX() > reset.x && m.getX() < reset.x + reset.w) {
-            if (m.getY() > reset.y && m.getY() < reset.y + reset.h) {
-                reset.hover = true;
-            }
-        }
-        
         if (buttonPress(mouse, reset)) reset.hover = true;
         if (buttonPress(mouse, gotem)) gotem.hover = true;
+        if (buttonPress(mouse, save)) save.hover = true;
+        if (buttonPress(mouse, load)) load.hover = true;
         
         setMouseCursor(CURSOR_GRAB);
     }
@@ -336,9 +385,13 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         
         if (buttonPress(mouse, reset)) reset();
         if (buttonPress(mouse, gotem)) getem();
+        if (buttonPress(mouse, save)) save();
+        if (buttonPress(mouse, load)) load();
         
         reset.hover = false;
         gotem.hover = false;
+        save.hover = false;
+        load.hover = false;
         
         dragPos.clear();
     }
@@ -486,7 +539,9 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         }
         
         reset.draw(big, font);
-        gotem.draw(big);
+        gotem.draw(big, font);
+        save.draw(big, font);
+        load.draw(big, font);
         
         // Draw the new image
         g.drawImage(bi, 0, 0, this);
