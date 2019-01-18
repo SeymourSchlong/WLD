@@ -26,25 +26,32 @@ import javax.swing.ImageIcon;
 public class Window extends javax.swing.JFrame implements MouseListener, MouseMotionListener {
 
     Dimension window = new Dimension(800, 600), screen = Toolkit.getDefaultToolkit().getScreenSize();
-    int moves = 0, mls = 0, secs = 0, mins = 0, hours = 0, clickedBlock = -1, xDistance, yDistance, dragLength;
+    int moves = 0, clickedBlock = -1, xDistance, yDistance, dragLength;
+    int totalSecs, totalMins, totalHours, mls = 0, secs = 0, mins = 0, hours = 0;
     int[] xPositions = { 50, 150, 250, 350, 450 },
             yPositions = { 50, 150, 250, 350, 450, 550 };
+    int[] blockMoves;
     long openTime = System.currentTimeMillis();
     String time = "";
     char dir;
+    int state = 0;
+    /**
+     * 0 : Playing
+     * 1 : Victory screen
+     */
     
     ArrayList<Point> dragPos = new ArrayList();
     
-    boolean hovering, clicking;
+    boolean hovering, clicking, imagesVisible = true;
     
     Block blocks[];
-    Grid grid[];
     
     int CURSOR_DEFAULT = 0, CURSOR_HOVER = 1, CURSOR_GRAB = 2;
+    Image background;
     ImageIcon cursor, hover, grab;
-    Font customFont, font;
+    Font font, header;
     Point mouse, lastClick, frame;
-    Button reset, gotem, save, load;
+    Button reset, gotem, save, load, image, newGame;
     Graphics big;
     BufferedImage bi;
     Timer timer;
@@ -62,6 +69,8 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         gotem = new Button(window.width - 6, window.height - 6, 5, 5, "");
         save = new Button(600, 110, 80, 25, "SAVE");
         load = new Button(600, 145, 80, 25, "LOAD");
+        image = new Button(600, 180, 80, 25, "IMAGE");
+        newGame = new Button(195, 450, 110, 25, "NEW GAME");
         
         setTitle("WLD"); // Sets the window title
         setSize(window); // Sets the window size
@@ -75,15 +84,12 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         timer = new Timer();
         mouse = new Point();
         
+        background = new Image(40, 40, "background.png");
+        
+        blockMoves = new int[4];
+        
         // Creating the blocks
         blocks = new Block[10];
-        grid = new Grid[20]; 
-        for(int i = 0; i < 5; i++) {
-            for(int j = 0; j < 4; j++) {
-                grid[i*4 + j] = new Grid(((j*100)+50), ((i*100)+50));
-                System.out.println((i*4)+j);
-            }
-        }
         for (int i = 0; i < blocks.length; i++) {
             int type = 0, xPos = 0, yPos = 0;
             String imgLoc = "";
@@ -157,17 +163,29 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         timer.start();
     }
     
+    // Used for reloading images.
+    public void reloadImages() {
+        for (Block b : blocks) b.loadImage();
+        background = new Image(40, 40, "background.png");
+    }
+    
     public void save() {
         String fileContent = "";
-        
+        String linebreak = ";\r\n";
+        // Saves the x,y coordinates of the blocks
         for (Block b : blocks) {
             // x,y;
-            fileContent += (b.x - 1) + "," + (b.y - 1) + ";";
+            fileContent += (b.x - 1) + "," + (b.y - 1) + linebreak;
         }
-        // Adds the amount of moves and time taken at the end.
-        fileContent += moves + ";";
-        fileContent += (System.currentTimeMillis() - openTime);
-     
+        // Adds the amount of moves and time taken
+        fileContent += moves + linebreak;
+        fileContent += (System.currentTimeMillis() - openTime) + linebreak;
+        // Saves the amount of moves on each block
+        for (int i = 0; i < blockMoves.length; i++) {
+            fileContent += blockMoves[i] + linebreak;
+        }
+        fileContent += imagesVisible + linebreak;
+        
         try {
             FileWriter fileWriter = new FileWriter("./save.wld");
             fileWriter.write(fileContent);
@@ -179,17 +197,17 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         System.out.println("Successfully saved progress!");
     }
     
-    public void load() {
+    public void load(String file) {
         // Current character being read
         String line = null;
         // The content of the .wld file
         String fileContent = "";
         
         // if there is no save found, stop
-        if (!new File("./save.wld").exists()) return;
+        if (!new File("./" + file + ".wld").exists()) return;
         
         try {
-            FileReader fileReader = new FileReader("./save.wld");
+            FileReader fileReader = new FileReader("./" + file + ".wld");
             
             BufferedReader bufferedReader = new BufferedReader(fileReader);
             while((line = bufferedReader.readLine()) != null) {
@@ -204,42 +222,55 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         System.out.println("Successfully loaded progress!");
         String[] blockProgress = fileContent.split(";");
         
+        // If the file's contents are incorrect in length, return
+        if (blockProgress.length != 17) return;
+        
         // Put the blocks in the saved spot
         for (int i = 0; i < blocks.length; i++) {
             String blockPos[] = blockProgress[i].split(",");
             blocks[i].setPos(Integer.parseInt(blockPos[0]), Integer.parseInt(blockPos[1]));
         }
-        // Sets the move counter to the amount given in the save
+        // Sets the total move counter
         moves = Integer.parseInt(blockProgress[10]);
-        // Sets the timer to the current time minus the amount of milliseconds in the save
+        
+        // Sets the timer
         openTime = System.currentTimeMillis() - Integer.parseInt(blockProgress[11]);
+        
+        // Sets the block moves
+        for (int i = 0; i < blockMoves.length; i++) {
+            blockMoves[i] = Integer.parseInt(blockProgress[i + 12]);
+        }
+        
+        // Sets the image visibility
+        boolean tempImg = Boolean.parseBoolean(blockProgress[16]);
+        if (tempImg != imagesVisible) toggleImages();
     }
     
     public void reset() {
+        state = 0;
         openTime = System.currentTimeMillis();
         moves = 0;
         for (Block b : blocks) {
             b.resetPos();
             b.imgVisible = true;
         }
+        for (int i = 0; i < blockMoves.length; i++) blockMoves[i] = 0;
+        if (!imagesVisible) toggleImages();
     }
+    
     public void getem() {
         System.out.println("gotcha");
-        for (Block b : blocks) b.imgVisible = false;
-        // Big block
-        blocks[0].setPos(250, 50);
-        // Tall blocks
-        blocks[1].setPos(250, 150);
-        blocks[2].setPos(250, 250);
-        blocks[3].setPos(350, 150);
-        blocks[4].setPos(350, 250);
-        // Long block
-        blocks[5].setPos(150, 350);
-        // Small block
-        blocks[6].setPos(50, 250);
-        blocks[7].setPos(150, 150);
-        blocks[8].setPos(250, 450);
-        blocks[9].setPos(350, 450);
+        load("g");
+    }
+    
+    public void win() {
+        state = 1;
+    }
+    
+    public void toggleImages() {
+        imagesVisible = !imagesVisible;
+
+        for (Block b : blocks) b.imgVisible = imagesVisible;
     }
     
     public void setMouseCursor(int a) {
@@ -280,7 +311,6 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
             for (int i = 0; i < blocks.length; i++) {
                 if (i != clickedBlock) {
                     if ((b.x >= blocks[i].xPrev && b.x <= blocks[i].x + blocks[i].w) && (b.y >= blocks[i].yPrev && b.y <= blocks[i].y + blocks[i].h)) {
-                        System.out.println("There's already a block there!");
                         b.x = b.xPrev;
                         b.y = b.yPrev;
                         break;
@@ -288,10 +318,18 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
                 }
             }
             
-            // If the block's "new" location is the same as when 
+            // If the block's "new" location is not the same as its previous location 
             if (b.x != b.xPrev || b.y != b.yPrev) {
                 moves++;
+                blockMoves[b.type - 1]++;
                 b.setPrev();
+            }
+            
+            if (b.isKing()) {
+                if (b.x == 150 + 1 && b.y == 350 + 1) {
+                    System.out.println("holy shit you did it, fuckig cheater");
+                    win();
+                }
             }
             
             clickedBlock = -1;
@@ -299,7 +337,7 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     
     public void mouseMoved(MouseEvent m) {
         mouse = m.getPoint();
-        if (isHovering(mouse, blocks)) {
+        if (state == 0 && isHovering(mouse, blocks)) {
             hovering = true;
             setMouseCursor(CURSOR_HOVER);
         } else {
@@ -312,73 +350,83 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         mouse = m.getPoint();
         dragLength++;
         
-        if (clickedBlock != -1) {
-            if (dragLength == 1) {
-                xDistance = mouse.x - lastClick.x;
-                yDistance = mouse.y - lastClick.y;
-                
-//                if (xDistance != 0) {
-//                    if (yDistance != 0) {
-//                        double slope = yDistance/xDistance;
-//                        
-//                        if (slope > 1) dir = 'y';
-//                        else dir = 'x';
-//                    } else dir = 'y';
-//                } else dir = 'x';
-                
-                if (Math.abs(xDistance) == Math.abs(yDistance)) {
-                    dragLength--;
-                } else if (Math.abs(xDistance) > Math.abs(yDistance)) {
-                    dir = 'x';
-                } else if (Math.abs(xDistance) < Math.abs(yDistance)) {
-                    // Set the moving direction to up/down
-                    dir = 'y';
-                }
-                
-                dragPos.add(dragLength, mouse);
-            } else {
-                dragPos.add(dragLength, mouse);
-                blocks[clickedBlock].slide(dir, mouse, dragPos.get(dragLength-1));
-                
-                
-                for (int i = 0; i < blocks.length; i++) {
-                    Block b = blocks[i];
-                    
-                    if (b != blocks[clickedBlock]) {
-                        int side = collision(blocks[clickedBlock], b, dir);
-                        //side = 0; // Disables collision if uncommented
-                        
-                        if (side != 0) {
-                            snapBlock(blocks[clickedBlock]);
-                            break;
+        if (state == 0) {
+            if (clickedBlock != -1) {
+                if (dragLength == 1) {
+                    xDistance = mouse.x - lastClick.x;
+                    yDistance = mouse.y - lastClick.y;
+
+                    if (xDistance != 0) {
+                        if (yDistance != 0) {
+                            double slope = yDistance/xDistance;
+                            
+                            if (slope > 1) dir = 'y';
+                            else dir = 'x';
+                        } else dir = 'x';
+                    } else dir = 'y';
+
+//                    if (Math.abs(xDistance) == Math.abs(yDistance)) {
+//                        dragLength--;
+//                    } else if (Math.abs(xDistance) > Math.abs(yDistance)) {
+//                        dir = 'x';
+//                    } else if (Math.abs(xDistance) < Math.abs(yDistance)) {
+//                        // Set the moving direction to up/down
+//                        dir = 'y';
+//                    }
+
+                    dragPos.add(dragLength, mouse);
+                } else {
+                    dragPos.add(dragLength, mouse);
+                    blocks[clickedBlock].slide(dir, mouse, dragPos.get(dragLength-1));
+
+
+                    for (int i = 0; i < blocks.length; i++) {
+                        Block b = blocks[i];
+
+                        if (i != clickedBlock) {
+                            int side = collision(blocks[clickedBlock], b, dir);
+                            //side = 0; // Disables collision if uncommented
+
+                            if (side != 0) {
+                                snapBlock(blocks[clickedBlock]);
+                                break;
+                            }
                         }
                     }
                 }
             }
+
+            if (isHovering(mouse, blocks)) hovering = true;
+            else hovering = false;
         }
-        
-        if (isHovering(mouse, blocks)) hovering = true;
-        else hovering = false;
     }
     
     public void mousePressed(MouseEvent m) {
         lastClick = m.getPoint(); // Sets the position of the click.
         clicking = true;
-        dragLength = 0;
-        dragPos.add(0, lastClick);
         
-        for (int i = 0; i < blocks.length; i++) {
-            if (collision(mouse, blocks[i])) {
-                clickedBlock = i;
-                
-                blocks[i].setPrev();
+        if (state == 0) {
+            dragLength = 0;
+            dragPos.add(0, lastClick);
+            
+            for (int i = 0; i < blocks.length; i++) {
+                if (collision(mouse, blocks[i])) {
+                    clickedBlock = i;
+
+                    blocks[i].setPrev();
+                }
             }
+
+            if (buttonPress(mouse, reset)) reset.hover = true;
+            if (buttonPress(mouse, gotem)) gotem.hover = true;
+            if (buttonPress(mouse, save)) save.hover = true;
+            if (buttonPress(mouse, load)) load.hover = true;
+            if (buttonPress(mouse, image)) image.hover = true;
         }
         
-        if (buttonPress(mouse, reset)) reset.hover = true;
-        if (buttonPress(mouse, gotem)) gotem.hover = true;
-        if (buttonPress(mouse, save)) save.hover = true;
-        if (buttonPress(mouse, load)) load.hover = true;
+        if (state == 1) {
+            if (buttonPress(mouse, newGame)) newGame.hover = true;
+        }
         
         setMouseCursor(CURSOR_GRAB);
     }
@@ -386,25 +434,40 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     public void mouseReleased(MouseEvent m) {
         clicking = false;
         
-        // Snap to nearest location
-        if (clickedBlock != -1) {
-            snapBlock(blocks[clickedBlock]);
+        if (state == 0) {
+            if (m.isControlDown() && m.isAltDown()) {
+                reloadImages();
+                if (buttonPress(mouse, load)) load("win");
+            } else {
+                if (buttonPress(mouse, load)) load("save");
+            }
+
+            // Snap to nearest location
+            if (clickedBlock != -1) {
+                snapBlock(blocks[clickedBlock]);
+            }
+
+            if (buttonPress(mouse, reset)) reset();
+            if (buttonPress(mouse, gotem)) getem();
+            if (buttonPress(mouse, save)) save();
+            if (buttonPress(mouse, image)) toggleImages();
+
+            dragPos.clear();
         }
         
-        if (hovering) setMouseCursor(CURSOR_HOVER);
-        else setMouseCursor(CURSOR_DEFAULT);
-        
-        if (buttonPress(mouse, reset)) reset();
-        if (buttonPress(mouse, gotem)) getem();
-        if (buttonPress(mouse, save)) save();
-        if (buttonPress(mouse, load)) load();
-        
+        if (state == 1) {
+            if (buttonPress(mouse, newGame)) reset();
+            
+        }
         reset.hover = false;
         gotem.hover = false;
         save.hover = false;
         load.hover = false;
-        
-        dragPos.clear();
+        image.hover = false;
+        newGame.hover = false;
+
+        if (hovering) setMouseCursor(CURSOR_HOVER);
+        else setMouseCursor(CURSOR_DEFAULT);
     }
     
     //<editor-fold defaultstate="collapsed" desc=" Unused Listeners ">
@@ -509,13 +572,12 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     public void updateTime() {
         // Find the difference in milliseconds since when it was opened and the current time.
         mls = (int) (System.currentTimeMillis() - openTime);
-        int totalSecs, totalMins, totalHours;
         
         // Find the amount of...
         totalSecs = mls/1000;           // seconds the program has been open
         totalMins = totalSecs / 60;     // minutes the program has been open
         totalHours = totalMins / 60;    // hours the program has been open
-                                        
+
         // Convert into HH:MM:SS
         secs = totalSecs % 60;          // How many seconds
         mins = totalMins % 60;          // How many minutes
@@ -529,30 +591,52 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         big.clearRect(0, 0, window.width, window.height);
         
         font = new Font("Comic Sans MS", Font.PLAIN, 18);
+        header = new Font("Comic Sans MS", Font.BOLD, 20);
         big.setFont(font);
         
         // Background for the bricks
-        big.setColor(new Color(0x663300));
-        big.fill3DRect(40, 40, 420, 520, true);
+        background.draw(big, this);
         
         big.setColor(Color.BLACK);
         big.drawString("Time Elapsed", 600, 500);
         big.drawString(time, 600, 550);
-        big.drawString("Total Moves", 600, 200);
-        big.drawString(String.valueOf(moves), 600, 250);
-        
-        // Draw the bricks
-        for (int i = 0; i < blocks.length; i++) {
-            Block b = blocks[i];
-            blocks[i].draw(big, this);
-            big.setColor(Color.BLACK);
-            //big.drawString(String.valueOf(i), b.x + b.w/2 - 3, b.y + b.h/2 + 6);
-        }
+        big.drawString("Total Moves", 600, 250);
+        big.drawString(String.valueOf(moves), 600, 275);
         
         reset.draw(big, font);
         gotem.draw(big, font);
         save.draw(big, font);
         load.draw(big, font);
+        image.draw(big, font);
+        
+        if (state == 0) {
+            // Draw the bricks
+            for (int i = 0; i < blocks.length; i++) {
+                Block b = blocks[i];
+                blocks[i].draw(big, this);
+                big.setColor(Color.BLACK);
+                //big.drawString(String.valueOf(i), b.x + b.w/2 - 3, b.y + b.h/2 + 6);
+            }
+        }
+        if (state == 1) {
+            // Total amount of moves
+            big.setFont(header);
+            big.drawString("Total Moves: " + moves, 85, 95);
+            // Block type moves
+            big.setFont(font);
+            String str[] = { "Big", "Tall", "Long", "Small" };
+            for (int i = 0; i < blockMoves.length; i++) {
+                big.drawString(str[i] + " Block Moves: " + blockMoves[i], 85, 120 + i*25);
+            }
+            // Total time taken
+            big.setFont(header);
+            big.drawString("Total Time: " + time, 85, 250);
+            // Moves per minute
+            big.setFont(font);
+            big.drawString("Moves/Minute: " + moves/(totalMins == 0 ? 1 : totalMins), 85, 275);
+            // Draw new game button
+            newGame.draw(big, font);
+        }
         
         // Draw the new image
         g.drawImage(bi, 0, 0, this);
@@ -561,10 +645,10 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
     public class Timer extends Thread {
         public void run() {
             while(true) {
-                updateTime();
+                if (state == 0) updateTime();
                 
                 try {
-                    Thread.sleep(1);
+                    Thread.sleep(8);
                 } catch(Exception e) {
                     System.out.println(e);
                 }
