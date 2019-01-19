@@ -3,6 +3,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.image.ImageObserver;
+import java.io.File;
 
 /**
  * A sliding block class
@@ -14,10 +15,11 @@ public class Block {
     public boolean chunk = false;
     public int xPrev, yPrev;
     public int id = -1;
+    public String imgLoc;
     public int type;
     public int x, y, w, h, xStart, yStart;
     public boolean imgVisible = false;
-    public Image img;
+    public Image img, blank;
     public char direction;
     
     public Block(int xx, int yy, int blockType, String loc, int num) {
@@ -27,14 +29,20 @@ public class Block {
         y = yy;
         xStart = xx;
         yStart = yy;
-        setPrev();
         
         type = blockType;
         
-        setType(type);
+        imgLoc = loc;
         
-        if (!".png".equals(loc)) {
-            img = new Image(x, y, loc);
+        setType(type);
+        setPrev();
+        loadImage();
+    }
+    
+    public void loadImage() {
+        if (new File("./img/" + imgLoc).exists()) {
+            img = new Image(x, y, imgLoc);
+            img.setSize(w, h);
             imgVisible = true;
         }
     }
@@ -42,6 +50,7 @@ public class Block {
     public void setPos(int xx, int yy) {
         x = xx + 1;
         y = yy + 1;
+        setPrev();
     }
     
     public void setType(int blockType) {
@@ -71,20 +80,22 @@ public class Block {
                 break;
         }
         
+        blank = new Image(x, y, "block_" + type + ".png");
+        
         h -= 2;
         w -= 2;
     }
     
     public void draw(Graphics g, ImageObserver i) {
-        g.setColor(new Color(0xc19a6b));
-        g.fill3DRect(x, y, w, h, true);
-        
         if (imgVisible) img.draw(g, x, y, i);
+        else blank.draw(g, x, y, i);
     }
     
     public void resetPos() {
         x = xStart;
         y = yStart;
+        
+        setPrev();
     }
     
     public void setPrev() {

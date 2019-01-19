@@ -76,8 +76,8 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
         setSize(window); // Sets the window size
         setResizable(false); // Makes it so you can't change the window size
         setLocation((screen.width/2) - (window.width/2), (screen.height/2) - (window.height/2) - 100); // Puts the window in the center of the screen
-        setIconImage(Toolkit.getDefaultToolkit().getImage("./img/icon.gif")); // Sets the toolbar and window icon
         setMouseCursor(CURSOR_DEFAULT); // Changes the mouse cursor
+        if (new File("./img/icon.gif").exists()) setIconImage(Toolkit.getDefaultToolkit().getImage("./img/icon.gif")); // Sets the toolbar and window icon
         
         bi = (BufferedImage) createImage(window.width, window.height);
         big = bi.createGraphics();
@@ -356,6 +356,7 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
                     xDistance = mouse.x - lastClick.x;
                     yDistance = mouse.y - lastClick.y;
 
+                    /*
                     if (xDistance != 0) {
                         if (yDistance != 0) {
                             double slope = yDistance/xDistance;
@@ -363,16 +364,16 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
                             if (slope > 1) dir = 'y';
                             else dir = 'x';
                         } else dir = 'x';
-                    } else dir = 'y';
+                    } else dir = 'y';//*/
 
-//                    if (Math.abs(xDistance) == Math.abs(yDistance)) {
-//                        dragLength--;
-//                    } else if (Math.abs(xDistance) > Math.abs(yDistance)) {
-//                        dir = 'x';
-//                    } else if (Math.abs(xDistance) < Math.abs(yDistance)) {
-//                        // Set the moving direction to up/down
-//                        dir = 'y';
-//                    }
+                    if (Math.abs(xDistance) == Math.abs(yDistance)) {
+                        dragLength--;
+                    } else if (Math.abs(xDistance) > Math.abs(yDistance)) {
+                        dir = 'x';
+                    } else if (Math.abs(xDistance) < Math.abs(yDistance)) {
+                        // Set the moving direction to up/down
+                        dir = 'y';
+                    }
 
                     dragPos.add(dragLength, mouse);
                 } else {
@@ -633,7 +634,7 @@ public class Window extends javax.swing.JFrame implements MouseListener, MouseMo
             big.drawString("Total Time: " + time, 85, 250);
             // Moves per minute
             big.setFont(font);
-            big.drawString("Moves/Minute: " + moves/(totalMins == 0 ? 1 : totalMins), 85, 275);
+            big.drawString("Moves/Second: " + moves/totalSecs, 85, 275);
             // Draw new game button
             newGame.draw(big, font);
         }
